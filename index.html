@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pico Advanced MQTT Controller</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .dot {
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .control-btn {
+            transition: all 0.1s ease-in-out;
+        }
+        .control-btn:active {
+            transform: scale(0.95);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+        <div class="text-center">
+            <h1 class="text-2xl font-bold text-gray-800">Pico Advanced Controller</h1>
+            <p class="text-gray-500 mt-2">Using your private HiveMQ Broker</p>
+        </div>
+
+        <div id="connection-status" class="mt-6 flex items-center justify-center p-3 rounded-md bg-gray-100">
+            <span id="status-dot" class="dot bg-red-500 mr-3"></span>
+            <span id="status-text" class="font-medium text-gray-700">Connecting...</span>
+        </div>
+
+        <!-- Manual Controls -->
+        <div class="mt-8">
+            <h2 class="text-lg font-medium text-center text-gray-800">Manual Controls</h2>
+            <p class="text-center text-sm text-gray-500">Press and hold the buttons</p>
+            <div class="flex justify-around mt-4 space-x-4">
+                <button id="up-button" class="control-btn w-full py-4 text-lg font-bold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400" disabled>UP</button>
+                <button id="down-button" class="control-btn w-full py-4 text-lg font-bold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400" disabled>DOWN</button>
+            </div>
+        </div>
+
+        <!-- Automation Control -->
+        <div class="mt-8 border-t pt-6">
+            <h2 class="text-lg font-medium text-center text-gray-800">Automation</h2>
+            <div class="mt-4">
+                <button id="auto-button" class="w-full py-3 text-base font-medium text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 disabled:bg-gray-400 transition-colors" disabled>Start Automation</button>
+            </div>
+            <div id="auto-status" class="mt-4 text-center text-sm text-gray-500 h-5">
+                Automation is stopped.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- MQTT Configuration for Private HiveMQ Cloud ---
+        // IMPORTANT: Fill these in with the credentials from your HiveMQ Cloud dashboard
+        const host = '46ae51f4f3d74f3ca138768beed1676d.s1.eu.hivemq.cloud';
+        const port = 8884; // Port for Secure WebSockets (WSS/TLS)
+        const username = 'Piyushalways7';
+        const password = 'Piyushalways7';
+        // ----------------------------------------------------
+
+        const topic = 'pico/messages';
+        const clientId = 'pico-web-client-' + Math.random().toString(16).substr(2, 8);
+
+        // --- DOM Elements ---
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const autoStatus = document.getElementById('auto-status');
+        const upButton = document.getElementById('up-button');
+        const downButton = document.getElementById('down-button');
+        const autoButton = document.getElementById('auto-button');
+        
+        // --- State Variables ---
+        let isAutomationRunning = false;
+        let autoCounterInterval = null;
+        let counter = 0;
+
+        // --- MQTT Client Setup ---
+        const client = new Paho.MQTT.Client(host, port, clientId);
+        client.onConnectionLost = onConnectionLost;
+        
+        const connectOptions = {
+            onSuccess: onConnect,
+            onFailure: onFailure,
+            userName: username,
+            password: password,
+            useSSL: true
+        };
+        client.connect(connectOptions);
+
+        // --- Core Functions ---
+        function onConnect() {
+            console.log("Connected to Private HiveMQ Cloud!");
+            statusDot.classList.remove('bg-red-500');
+            statusDot.classList.add('bg-green-500');
+            statusText.textContent = 'Connected';
+            upButton.disabled = false;
+            downButton.disabled = false;
+            autoButton.disabled = false;
+        }
+        
+        function onFailure(response) {
+            console.log("Connection failed: " + response.errorMessage);
+            statusText.textContent = 'Connection Failed! Check credentials.';
+            statusDot.classList.add('bg-red-500');
+        }
+
+        function onConnectionLost(responseObject) {
+            if (responseObject.errorCode !== 0) {
+                console.log("onConnectionLost:" + responseObject.errorMessage);
+                statusDot.classList.remove('bg-green-500');
+                statusDot.classList.add('bg-red-500');
+                statusText.textContent = 'Connection Lost';
+                upButton.disabled = true;
+                downButton.disabled = true;
+                autoButton.disabled = true;
+            }
+        }
+        
+        function sendMessage(payload) {
+            if (client.isConnected()) {
+                const message = new Paho.MQTT.Message(payload);
+                message.destinationName = topic;
+                client.send(message);
+                console.log(`Message Sent: ${payload}`);
+            }
+        }
+
+        // --- Event Listeners for Manual Controls ---
+        // Using mousedown/mouseup for press-and-hold on desktop
+        // Using touchstart/touchend for press-and-hold on mobile
+        upButton.addEventListener('mousedown', () => sendMessage('UP - 1'));
+        upButton.addEventListener('mouseup', () => sendMessage('UP - 0'));
+        upButton.addEventListener('mouseleave', () => sendMessage('UP - 0')); // Handle mouse leaving button while pressed
+        upButton.addEventListener('touchstart', (e) => { e.preventDefault(); sendMessage('UP - 1'); });
+        upButton.addEventListener('touchend', () => sendMessage('UP - 0'));
+
+        downButton.addEventListener('mousedown', () => sendMessage('DOWN - 1'));
+        downButton.addEventListener('mouseup', () => sendMessage('DOWN - 0'));
+        downButton.addEventListener('mouseleave', () => sendMessage('DOWN - 0'));
+        downButton.addEventListener('touchstart', (e) => { e.preventDefault(); sendMessage('DOWN - 1'); });
+        downButton.addEventListener('touchend', () => sendMessage('DOWN - 0'));
+
+        // --- Event Listener for Automation Toggle ---
+        autoButton.addEventListener('click', () => {
+            isAutomationRunning = !isAutomationRunning; // Toggle the state
+
+            if (isAutomationRunning) {
+                // --- Start Automation ---
+                autoButton.textContent = 'Stop Automation';
+                autoButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+                autoButton.classList.add('bg-red-600', 'hover:bg-red-700');
+                autoStatus.textContent = 'Automatic counter running...';
+                
+                // Start the interval timer
+                autoCounterInterval = setInterval(() => {
+                    counter++;
+                    sendMessage(`Auto-Counter: ${counter}`);
+                }, 3000); // 3000 milliseconds = 3 seconds
+
+            } else {
+                // --- Stop Automation ---
+                if (autoCounterInterval) {
+                    clearInterval(autoCounterInterval); // Stop the interval
+                }
+                autoButton.textContent = 'Start Automation';
+                autoButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+                autoButton.classList.add('bg-green-600', 'hover:bg-green-700');
+                autoStatus.textContent = 'Automation is stopped.';
+            }
+        });
+    </script>
+</body>
+</html>
