@@ -3,184 +3,407 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pico Advanced MQTT Controller</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Relay Control System</title>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .dot {
-            height: 12px;
-            width: 12px;
-            border-radius: 50%;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .title {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .status {
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .status-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .status-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .connection-status {
             display: inline-block;
-            animation: pulse 2s infinite;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 5px;
         }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .control-btn {
-            transition: all 0.1s ease-in-out;
+
+        .connected {
+            background: #4CAF50;
+            color: white;
         }
-        .control-btn:active {
+
+        .disconnected {
+            background: #f44336;
+            color: white;
+        }
+
+        .connecting {
+            background: #ff9800;
+            color: white;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-button {
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            border: none;
+            border-radius: 15px;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.1);
+            user-select: none;
+            touch-action: manipulation;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .control-button:hover:before {
+            left: 100%;
+        }
+
+        .control-button.active {
             transform: scale(0.95);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(145deg, #45a049, #3d8b40);
+        }
+
+        .button-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
+        .log {
+            background: #1e1e1e;
+            color: #00ff00;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .title {
+                font-size: 24px;
+            }
+            
+            .control-button {
+                padding: 15px;
+                font-size: 16px;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-
-    <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
-        <div class="text-center">
-            <h1 class="text-2xl font-bold text-gray-800">Pico Advanced Controller</h1>
-            <p class="text-gray-500 mt-2">Using your private HiveMQ Broker</p>
+<body>
+    <div class="container">
+        <h1 class="title">🔌 Relay Control</h1>
+        <p class="subtitle">Press and hold buttons to control relays</p>
+        
+        <div class="status">
+            <div class="status-title">Connection Status</div>
+            <div class="status-text" id="connectionText">Connecting to MQTT broker...</div>
+            <span class="connection-status connecting" id="connectionBadge">CONNECTING</span>
         </div>
 
-        <div id="connection-status" class="mt-6 flex items-center justify-center p-3 rounded-md bg-gray-100">
-            <span id="status-dot" class="dot bg-red-500 mr-3"></span>
-            <span id="status-text" class="font-medium text-gray-700">Connecting...</span>
+        <div class="controls">
+            <button class="control-button" id="upButton">
+                <span class="button-icon">⬆️</span>UP
+            </button>
+            
+            <button class="control-button" id="downButton">
+                <span class="button-icon">⬇️</span>DOWN
+            </button>
         </div>
 
-        <!-- Manual Controls -->
-        <div class="mt-8">
-            <h2 class="text-lg font-medium text-center text-gray-800">Manual Controls</h2>
-            <p class="text-center text-sm text-gray-500">Press and hold the buttons</p>
-            <div class="flex justify-around mt-4 space-x-4">
-                <button id="up-button" class="control-btn w-full py-4 text-lg font-bold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400" disabled>UP</button>
-                <button id="down-button" class="control-btn w-full py-4 text-lg font-bold text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 disabled:bg-gray-400" disabled>DOWN</button>
-            </div>
-        </div>
-
-        <!-- Automation Control -->
-        <div class="mt-8 border-t pt-6">
-            <h2 class="text-lg font-medium text-center text-gray-800">Automation</h2>
-            <div class="mt-4">
-                <button id="auto-button" class="w-full py-3 text-base font-medium text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700 disabled:bg-gray-400 transition-colors" disabled>Start Automation</button>
-            </div>
-            <div id="auto-status" class="mt-4 text-center text-sm text-gray-500 h-5">
-                Automation is stopped.
-            </div>
+        <div class="log" id="log">
+            <div class="log-entry">System initializing...</div>
         </div>
     </div>
 
+    <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
     <script>
-        // --- MQTT Configuration for Private HiveMQ Cloud ---
-        // IMPORTANT: Fill these in with the credentials from your HiveMQ Cloud dashboard
-        const host = '46ae51f4f3d74f3ca138768beed1676d.s1.eu.hivemq.cloud';
-        const port = 8884; // Port for Secure WebSockets (WSS/TLS)
-        const username = 'Piyushalways7';
-        const password = 'Piyushalways7';
-        // ----------------------------------------------------
-
-        const topic = 'pico/messages';
-        const clientId = 'pico-web-client-' + Math.random().toString(16).substr(2, 8);
-
-        // --- DOM Elements ---
-        const statusDot = document.getElementById('status-dot');
-        const statusText = document.getElementById('status-text');
-        const autoStatus = document.getElementById('auto-status');
-        const upButton = document.getElementById('up-button');
-        const downButton = document.getElementById('down-button');
-        const autoButton = document.getElementById('auto-button');
-        
-        // --- State Variables ---
-        let isAutomationRunning = false;
-        let autoCounterInterval = null;
-        let counter = 0;
-
-        // --- MQTT Client Setup ---
-        const client = new Paho.MQTT.Client(host, port, clientId);
-        client.onConnectionLost = onConnectionLost;
-        
-        const connectOptions = {
-            onSuccess: onConnect,
-            onFailure: onFailure,
-            userName: username,
-            password: password,
-            useSSL: true
+        // MQTT Configuration - Update these to match your settings
+        const MQTT_CONFIG = {
+            broker: 'wss://46ae51f4f3d74f3ca138768beed1676d.s1.eu.hivemq.cloud:8884/mqtt',
+            options: {
+                username: 'Piyushalways7',
+                password: 'Piyushalways7',
+                clientId: 'web_client_' + Math.random().toString(16).substr(2, 8),
+                clean: true,
+                reconnectPeriod: 5000,
+                connectTimeout: 10000
+            },
+            topic: 'pico/messages'
         };
-        client.connect(connectOptions);
 
-        // --- Core Functions ---
-        function onConnect() {
-            console.log("Connected to Private HiveMQ Cloud!");
-            statusDot.classList.remove('bg-red-500');
-            statusDot.classList.add('bg-green-500');
-            statusText.textContent = 'Connected';
-            upButton.disabled = false;
-            downButton.disabled = false;
-            autoButton.disabled = false;
-        }
-        
-        function onFailure(response) {
-            console.log("Connection failed: " + response.errorMessage);
-            statusText.textContent = 'Connection Failed! Check credentials.';
-            statusDot.classList.add('bg-red-500');
-        }
+        // Global variables
+        let mqttClient = null;
+        let isConnected = false;
+        let upRelayState = false;
+        let downRelayState = false;
 
-        function onConnectionLost(responseObject) {
-            if (responseObject.errorCode !== 0) {
-                console.log("onConnectionLost:" + responseObject.errorMessage);
-                statusDot.classList.remove('bg-green-500');
-                statusDot.classList.add('bg-red-500');
-                statusText.textContent = 'Connection Lost';
-                upButton.disabled = true;
-                downButton.disabled = true;
-                autoButton.disabled = true;
-            }
-        }
-        
-        function sendMessage(payload) {
-            if (client.isConnected()) {
-                const message = new Paho.MQTT.Message(payload);
-                message.destinationName = topic;
-                client.send(message);
-                console.log(`Message Sent: ${payload}`);
+        // DOM elements
+        const upButton = document.getElementById('upButton');
+        const downButton = document.getElementById('downButton');
+        const connectionText = document.getElementById('connectionText');
+        const connectionBadge = document.getElementById('connectionBadge');
+        const logElement = document.getElementById('log');
+
+        // Logging function
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            // Keep only last 50 log entries
+            while (logElement.children.length > 50) {
+                logElement.removeChild(logElement.firstChild);
             }
         }
 
-        // --- Event Listeners for Manual Controls ---
-        // Using mousedown/mouseup for press-and-hold on desktop
-        // Using touchstart/touchend for press-and-hold on mobile
-        upButton.addEventListener('mousedown', () => sendMessage('UP - 1'));
-        upButton.addEventListener('mouseup', () => sendMessage('UP - 0'));
-        upButton.addEventListener('mouseleave', () => sendMessage('UP - 0')); // Handle mouse leaving button while pressed
-        upButton.addEventListener('touchstart', (e) => { e.preventDefault(); sendMessage('UP - 1'); });
-        upButton.addEventListener('touchend', () => sendMessage('UP - 0'));
+        // Update connection status
+        function updateConnectionStatus(status, message) {
+            connectionText.textContent = message;
+            connectionBadge.textContent = status.toUpperCase();
+            connectionBadge.className = `connection-status ${status}`;
+        }
 
-        downButton.addEventListener('mousedown', () => sendMessage('DOWN - 1'));
-        downButton.addEventListener('mouseup', () => sendMessage('DOWN - 0'));
-        downButton.addEventListener('mouseleave', () => sendMessage('DOWN - 0'));
-        downButton.addEventListener('touchstart', (e) => { e.preventDefault(); sendMessage('DOWN - 1'); });
-        downButton.addEventListener('touchend', () => sendMessage('DOWN - 0'));
+        // Send MQTT message
+        function sendCommand(command) {
+            if (!isConnected) {
+                addLog(`Cannot send command: ${command} - Not connected`);
+                return;
+            }
 
-        // --- Event Listener for Automation Toggle ---
-        autoButton.addEventListener('click', () => {
-            isAutomationRunning = !isAutomationRunning; // Toggle the state
-
-            if (isAutomationRunning) {
-                // --- Start Automation ---
-                autoButton.textContent = 'Stop Automation';
-                autoButton.classList.remove('bg-green-600', 'hover:bg-green-700');
-                autoButton.classList.add('bg-red-600', 'hover:bg-red-700');
-                autoStatus.textContent = 'Automatic counter running...';
+            try {
+                mqttClient.publish(MQTT_CONFIG.topic, command);
+                addLog(`Sent: ${command}`);
                 
-                // Start the interval timer
-                autoCounterInterval = setInterval(() => {
-                    counter++;
-                    sendMessage(`Auto-Counter: ${counter}`);
-                }, 3000); // 3000 milliseconds = 3 seconds
-
-            } else {
-                // --- Stop Automation ---
-                if (autoCounterInterval) {
-                    clearInterval(autoCounterInterval); // Stop the interval
+                // Update local state
+                if (command === 'up 1') {
+                    upRelayState = true;
+                } else if (command === 'up 0') {
+                    upRelayState = false;
+                } else if (command === 'down 1') {
+                    downRelayState = true;
+                } else if (command === 'down 0') {
+                    downRelayState = false;
                 }
-                autoButton.textContent = 'Start Automation';
-                autoButton.classList.remove('bg-red-600', 'hover:bg-red-700');
-                autoButton.classList.add('bg-green-600', 'hover:bg-green-700');
-                autoStatus.textContent = 'Automation is stopped.';
+            } catch (error) {
+                addLog(`Error sending command: ${error.message}`);
             }
+        }
+
+        // Button event handlers
+        function setupButtonEvents() {
+            // UP Button Events
+            upButton.addEventListener('mousedown', () => {
+                upButton.classList.add('active');
+                sendCommand('up 1');
+            });
+
+            upButton.addEventListener('mouseup', () => {
+                upButton.classList.remove('active');
+                sendCommand('up 0');
+            });
+
+            upButton.addEventListener('mouseleave', () => {
+                upButton.classList.remove('active');
+                if (upRelayState) {
+                    sendCommand('up 0');
+                }
+            });
+
+            // Touch events for mobile
+            upButton.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                upButton.classList.add('active');
+                sendCommand('up 1');
+            });
+
+            upButton.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                upButton.classList.remove('active');
+                sendCommand('up 0');
+            });
+
+            // DOWN Button Events
+            downButton.addEventListener('mousedown', () => {
+                downButton.classList.add('active');
+                sendCommand('down 1');
+            });
+
+            downButton.addEventListener('mouseup', () => {
+                downButton.classList.remove('active');
+                sendCommand('down 0');
+            });
+
+            downButton.addEventListener('mouseleave', () => {
+                downButton.classList.remove('active');
+                if (downRelayState) {
+                    sendCommand('down 0');
+                }
+            });
+
+            // Touch events for mobile
+            downButton.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                downButton.classList.add('active');
+                sendCommand('down 1');
+            });
+
+            downButton.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                downButton.classList.remove('active');
+                sendCommand('down 0');
+            });
+        }
+
+        // Initialize MQTT connection
+        function initMQTT() {
+            addLog('Connecting to MQTT broker...');
+            updateConnectionStatus('connecting', 'Connecting to MQTT broker...');
+
+            try {
+                mqttClient = mqtt.connect(MQTT_CONFIG.broker, MQTT_CONFIG.options);
+
+                mqttClient.on('connect', () => {
+                    isConnected = true;
+                    addLog('Connected to MQTT broker successfully!');
+                    updateConnectionStatus('connected', 'Connected to MQTT broker');
+                });
+
+                mqttClient.on('error', (error) => {
+                    isConnected = false;
+                    addLog(`MQTT Error: ${error.message}`);
+                    updateConnectionStatus('disconnected', `Connection error: ${error.message}`);
+                });
+
+                mqttClient.on('offline', () => {
+                    isConnected = false;
+                    addLog('MQTT client offline');
+                    updateConnectionStatus('disconnected', 'Connection lost - Reconnecting...');
+                });
+
+                mqttClient.on('reconnect', () => {
+                    addLog('Attempting to reconnect...');
+                    updateConnectionStatus('connecting', 'Reconnecting...');
+                });
+
+                mqttClient.on('close', () => {
+                    isConnected = false;
+                    addLog('MQTT connection closed');
+                    updateConnectionStatus('disconnected', 'Connection closed');
+                });
+
+            } catch (error) {
+                addLog(`Failed to connect: ${error.message}`);
+                updateConnectionStatus('disconnected', `Connection failed: ${error.message}`);
+            }
+        }
+
+        // Initialize the application
+        function init() {
+            addLog('Initializing Relay Control System...');
+            setupButtonEvents();
+            initMQTT();
+        }
+
+        // Start the application when page loads
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Send stop commands when page becomes hidden
+                if (upRelayState) sendCommand('up 0');
+                if (downRelayState) sendCommand('down 0');
+            }
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            if (upRelayState) sendCommand('up 0');
+            if (downRelayState) sendCommand('down 0');
         });
     </script>
 </body>
