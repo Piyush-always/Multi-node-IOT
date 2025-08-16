@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8-Relay Control System</title>
+    <title>Happy Janmashtami - Relay Control</title>
     <style>
         * {
             margin: 0;
@@ -13,382 +13,294 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: white;
             min-height: 100vh;
             padding: 20px;
+            color: #333;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
             text-align: center;
-            margin-bottom: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
+            margin-bottom: 40px;
+            padding: 20px 0;
         }
 
         .title {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 32px;
+            font-size: 36px;
             font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #3498db, #e74c3c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .subtitle {
-            color: #666;
-            font-size: 16px;
-            margin-bottom: 20px;
+            font-size: 18px;
+            color: #7f8c8d;
         }
 
-        .status {
-            background: #f0f0f0;
-            border-radius: 10px;
+        .status-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 40px;
             padding: 15px;
-            border-left: 4px solid #4CAF50;
-        }
-
-        .status-title {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
         }
 
         .status-text {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .connection-status {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 5px;
-        }
-
-        .connected {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .disconnected {
-            background: #f44336;
-            color: white;
-        }
-
-        .connecting {
-            background: #ff9800;
-            color: white;
-        }
-
-        .controls-section {
-            display: grid;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .bulk-controls {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        .bulk-title {
-            color: #333;
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .bulk-buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-
-        .relay-grid {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        .relay-title {
-            color: #333;
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .relay-buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-
-        .control-button {
-            border: none;
-            border-radius: 15px;
-            padding: 20px;
             font-size: 16px;
             font-weight: 600;
-            color: white;
-            cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            user-select: none;
-            touch-action: manipulation;
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(145deg, #6c757d, #5a6268);
         }
 
-        .control-button:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-            transition: left 0.5s;
+        .status-text.connected {
+            color: #27ae60;
         }
 
-        .control-button:hover:before {
-            left: 100%;
+        .status-text.disconnected {
+            color: #e74c3c;
         }
 
-        .control-button.on {
-            background: linear-gradient(145deg, #4CAF50, #45a049);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        .status-text.connecting {
+            color: #f39c12;
         }
 
-        .control-button.off {
-            background: linear-gradient(145deg, #f44336, #d32f2f);
+        .image-background-left {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 200px;
+            height: 300px;
+            background-image: url('1.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: -1;
+        }
+
+        .image-background-right {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            height: 300px;
+            background-image: url('2.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            z-index: -1;
+        }
+
+        .bulk-control {
+            text-align: center;
+            margin-bottom: 40px;
         }
 
         .bulk-button {
-            background: linear-gradient(145deg, #2196F3, #1976D2);
+            background: #f44336;
             border: none;
             border-radius: 15px;
-            padding: 15px 30px;
-            font-size: 16px;
+            padding: 12px 24px;
+            font-size: 14px;
             font-weight: 600;
             color: white;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .bulk-button:before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-            transition: left 0.5s;
-        }
-
-        .bulk-button:hover:before {
-            left: 100%;
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+            min-width: 140px;
         }
 
         .bulk-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
-        }
-
-        .bulk-button.danger {
-            background: linear-gradient(145deg, #f44336, #d32f2f);
-            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
-        }
-
-        .bulk-button.danger:hover {
             box-shadow: 0 8px 25px rgba(244, 67, 54, 0.4);
         }
 
-        .button-icon {
-            font-size: 20px;
-            margin-right: 8px;
+        .bulk-button.turn-off {
+            background: #4CAF50;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.6);
         }
 
-        .relay-number {
-            display: block;
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 5px;
+        .bulk-button.turn-off:hover {
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6);
         }
 
-        .relay-status {
-            display: block;
-            font-size: 12px;
-            opacity: 0.8;
+        .bulk-button:active {
+            transform: translateY(0);
+        }
+
+        .relay-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .relay-button {
+            border: none;
+            border-radius: 15px;
+            background: #f44336;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 50px;
+            min-width: 50px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .relay-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .relay-button.on {
+            background: #4CAF50;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .relay-button.on:hover {
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6);
+        }
+
+        .relay-button.off {
+            background: #f44336;
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .relay-button.off:hover {
+            box-shadow: 0 8px 25px rgba(244, 67, 54, 0.6);
         }
 
         .log-section {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
             padding: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        .log-title {
-            color: #333;
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 15px;
         }
 
         .log {
-            background: #1e1e1e;
-            color: #00ff00;
-            border-radius: 10px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 6px;
             padding: 15px;
-            max-height: 200px;
+            max-height: 150px;
             overflow-y: auto;
             font-family: 'Courier New', monospace;
             font-size: 12px;
         }
 
         .log-entry {
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             word-wrap: break-word;
         }
 
-        .system-controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-
-        .system-button {
-            background: linear-gradient(145deg, #9C27B0, #7B1FA2);
+        .clear-log {
+            margin-top: 10px;
+            background: #95a5a6;
             border: none;
-            border-radius: 10px;
-            padding: 10px 20px;
+            border-radius: 4px;
+            padding: 8px 16px;
             color: white;
-            font-weight: 600;
             cursor: pointer;
+            font-size: 12px;
             transition: all 0.3s ease;
         }
 
-        .system-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(156, 39, 176, 0.4);
+        .clear-log:hover {
+            background: #7f8c8d;
         }
 
         @media (max-width: 768px) {
-            .relay-buttons {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            .controls-section {
+                flex-direction: column;
             }
             
-            .bulk-buttons {
-                grid-template-columns: 1fr;
-            }
-            
-            .control-button {
-                padding: 15px;
-                font-size: 14px;
+            .relay-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
             
             .title {
                 font-size: 28px;
             }
+            
+            .container {
+                padding: 10px;
+            }
+
+            .image-background-left,
+            .image-background-right {
+                width: 100px;
+                height: 100px;
+            }
         }
 
         @media (max-width: 480px) {
-            .relay-buttons {
-                grid-template-columns: 1fr 1fr;
+            .relay-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
             }
             
-            .control-button {
-                padding: 12px;
+            .relay-button {
+                height: 45px;
+                font-size: 12px;
             }
-            
-            .header {
-                padding: 20px;
+
+            .image-background-left,
+            .image-background-right {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="image-background-left"></div>
+        <div class="image-background-right"></div>
+        
         <div class="header">
-            <h1 class="title">🔌 8-Relay Control System</h1>
-            <p class="subtitle">Individual and bulk relay control via MQTT</p>
-            
-            <div class="status">
-                <div class="status-title">Connection Status</div>
-                <div class="status-text" id="connectionText">Connecting to MQTT broker...</div>
-                <span class="connection-status connecting" id="connectionBadge">CONNECTING</span>
-            </div>
+            <h1 class="title">जन्माष्टमी महोत्सवम्</h1>
+            <p class="subtitle">जयतु नन्दकुमारः! शुभ-जनमाष्टमी</p>
         </div>
 
-        <div class="controls-section">
-            <div class="bulk-controls">
-                <div class="bulk-title">🔄 Bulk Controls</div>
-                <div class="bulk-buttons">
-                    <button class="bulk-button" onclick="sendCommand('all on')">
-                        <span class="button-icon">⚡</span>Turn All ON
-                    </button>
-                    <button class="bulk-button danger" onclick="sendCommand('all off')">
-                        <span class="button-icon">🔌</span>Turn All OFF
-                    </button>
-                    <button class="bulk-button" onclick="sendCommand('status')" style="background: linear-gradient(145deg, #FF9800, #F57C00);">
-                        <span class="button-icon">📊</span>Get Status
-                    </button>
-                </div>
-            </div>
+        <div class="status-section">
+            <div class="status-text connecting" id="statusText">Connecting...</div>
+        </div>
 
-            <div class="relay-grid">
-                <div class="relay-title">⚡ Individual Relay Controls</div>
-                <div class="relay-buttons" id="relayButtons">
-                    <!-- Relay buttons will be generated by JavaScript -->
-                </div>
-            </div>
+        <div class="relay-grid" id="relayGrid">
+            <!-- Relay buttons will be generated by JavaScript -->
+        </div>
+
+        <div class="bulk-control">
+            <button class="bulk-button" id="bulkToggle" onclick="toggleAllRelays()">
+                Turn All ON
+            </button>
         </div>
 
         <div class="log-section">
-            <div class="log-title">📋 System Log</div>
             <div class="log" id="log">
                 <div class="log-entry">System initializing...</div>
             </div>
-            <div class="system-controls">
-                <button class="system-button" onclick="sendCommand('help')">
-                    <span class="button-icon">❓</span>Help
-                </button>
-                <button class="system-button" onclick="clearLog()">
-                    <span class="button-icon">🗑️</span>Clear Log
-                </button>
-                <button class="system-button" onclick="sendCommand('restart')" style="background: linear-gradient(145deg, #f44336, #d32f2f);">
-                    <span class="button-icon">🔄</span>Restart ESP32
-                </button>
-            </div>
+            <button class="clear-log" onclick="clearLog()">Clear Log</button>
         </div>
     </div>
 
     <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
     <script>
-        // MQTT Configuration - Update these to match your settings
+        // MQTT Configuration
         const MQTT_CONFIG = {
             broker: 'wss://46ae51f4f3d74f3ca138768beed1676d.s1.eu.hivemq.cloud:8884/mqtt',
             options: {
@@ -407,29 +319,27 @@
         let mqttClient = null;
         let isConnected = false;
         let relayStates = {1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false, 8: false};
+        let allRelaysOn = false;
 
         // DOM elements
-        const connectionText = document.getElementById('connectionText');
-        const connectionBadge = document.getElementById('connectionBadge');
+        const statusText = document.getElementById('statusText');
         const logElement = document.getElementById('log');
-        const relayButtonsContainer = document.getElementById('relayButtons');
+        const relayGrid = document.getElementById('relayGrid');
+        const bulkToggle = document.getElementById('bulkToggle');
 
         // Generate relay buttons
         function generateRelayButtons() {
             for (let i = 1; i <= 8; i++) {
                 const button = document.createElement('button');
-                button.className = 'control-button off';
-                button.id = `relay${i}Button`;
-                button.innerHTML = `
-                    <span class="relay-number">R${i}</span>
-                    <span class="relay-status">OFF</span>
-                `;
+                button.className = 'relay-button off';
+                button.id = `relay${i}`;
+                button.textContent = i;
                 button.onclick = () => toggleRelay(i);
-                relayButtonsContainer.appendChild(button);
+                relayGrid.appendChild(button);
             }
         }
 
-        // Toggle relay state
+        // Toggle individual relay
         function toggleRelay(relayNum) {
             if (!isConnected) {
                 addLog(`Cannot control relay ${relayNum} - Not connected`);
@@ -441,20 +351,41 @@
             sendCommand(command);
         }
 
+        // Toggle all relays
+        function toggleAllRelays() {
+            if (!isConnected) {
+                addLog('Cannot control relays - Not connected');
+                return;
+            }
+
+            allRelaysOn = !allRelaysOn;
+            const command = allRelaysOn ? 'all on' : 'all off';
+            bulkToggle.textContent = allRelaysOn ? 'Turn All OFF' : 'Turn All ON';
+            sendCommand(command);
+        }
+
         // Update relay button appearance
         function updateRelayButton(relayNum, state) {
-            const button = document.getElementById(`relay${relayNum}Button`);
-            const statusSpan = button.querySelector('.relay-status');
-            
-            if (state) {
-                button.className = 'control-button on';
-                statusSpan.textContent = 'ON';
-            } else {
-                button.className = 'control-button off';
-                statusSpan.textContent = 'OFF';
+            const button = document.getElementById(`relay${relayNum}`);
+            if (button) {
+                button.className = state ? 'relay-button on' : 'relay-button off';
+                relayStates[relayNum] = state;
             }
+        }
+
+        // Update bulk button state
+        function updateBulkButton() {
+            const allOn = Object.values(relayStates).every(state => state);
             
-            relayStates[relayNum] = state;
+            if (allOn) {
+                bulkToggle.textContent = 'Turn All OFF';
+                bulkToggle.className = 'bulk-button turn-off';
+                allRelaysOn = true;
+            } else {
+                bulkToggle.textContent = 'Turn All ON';
+                bulkToggle.className = 'bulk-button';
+                allRelaysOn = false;
+            }
         }
 
         // Logging function
@@ -466,8 +397,8 @@
             logElement.appendChild(logEntry);
             logElement.scrollTop = logElement.scrollHeight;
             
-            // Keep only last 100 log entries
-            while (logElement.children.length > 100) {
+            // Keep only last 50 log entries
+            while (logElement.children.length > 50) {
                 logElement.removeChild(logElement.firstChild);
             }
         }
@@ -479,9 +410,8 @@
 
         // Update connection status
         function updateConnectionStatus(status, message) {
-            connectionText.textContent = message;
-            connectionBadge.textContent = status.toUpperCase();
-            connectionBadge.className = `connection-status ${status}`;
+            statusText.textContent = message;
+            statusText.className = `status-text ${status}`;
         }
 
         // Send MQTT message
@@ -501,14 +431,17 @@
                     const relayNum = parseInt(parts[0].replace('relay', ''));
                     const state = parts[1] === 'on' || parts[1] === '1';
                     updateRelayButton(relayNum, state);
+                    updateBulkButton();
                 } else if (command === 'all on') {
                     for (let i = 1; i <= 8; i++) {
                         updateRelayButton(i, true);
                     }
+                    updateBulkButton();
                 } else if (command === 'all off') {
                     for (let i = 1; i <= 8; i++) {
                         updateRelayButton(i, false);
                     }
+                    updateBulkButton();
                 }
             } catch (error) {
                 addLog(`Error sending command: ${error.message}`);
@@ -518,7 +451,7 @@
         // Handle incoming MQTT messages
         function handleIncomingMessage(topic, message) {
             const msg = message.toString();
-            addLog(`Received on ${topic}: ${msg}`);
+            addLog(`Received: ${msg}`);
             
             // Handle status messages
             if (topic === MQTT_CONFIG.statusTopic) {
@@ -531,18 +464,9 @@
                             updateRelayButton(i, state);
                         }
                     }
+                    updateBulkButton();
                 } catch (error) {
                     addLog(`Error parsing status: ${error.message}`);
-                }
-            }
-            
-            // Handle individual relay status
-            if (topic.includes('/relay') && topic !== MQTT_CONFIG.statusTopic) {
-                const relayMatch = topic.match(/relay(\d+)$/);
-                if (relayMatch) {
-                    const relayNum = parseInt(relayMatch[1]);
-                    const state = msg === 'ON';
-                    updateRelayButton(relayNum, state);
                 }
             }
         }
@@ -550,7 +474,7 @@
         // Initialize MQTT connection
         function initMQTT() {
             addLog('Connecting to MQTT broker...');
-            updateConnectionStatus('connecting', 'Connecting to MQTT broker...');
+            updateConnectionStatus('connecting', 'Connecting...');
 
             try {
                 mqttClient = mqtt.connect(MQTT_CONFIG.broker, MQTT_CONFIG.options);
@@ -558,12 +482,11 @@
                 mqttClient.on('connect', () => {
                     isConnected = true;
                     addLog('Connected to MQTT broker successfully!');
-                    updateConnectionStatus('connected', 'Connected to MQTT broker');
+                    updateConnectionStatus('connected', 'Connected');
                     
                     // Subscribe to status topics
                     mqttClient.subscribe(MQTT_CONFIG.statusTopic);
-                    mqttClient.subscribe(MQTT_CONFIG.statusTopic + '/+');
-                    addLog(`Subscribed to status topics`);
+                    addLog('Subscribed to status topics');
                     
                     // Request current status
                     setTimeout(() => {
@@ -576,13 +499,13 @@
                 mqttClient.on('error', (error) => {
                     isConnected = false;
                     addLog(`MQTT Error: ${error.message}`);
-                    updateConnectionStatus('disconnected', `Connection error: ${error.message}`);
+                    updateConnectionStatus('disconnected', 'Connection Error');
                 });
 
                 mqttClient.on('offline', () => {
                     isConnected = false;
                     addLog('MQTT client offline');
-                    updateConnectionStatus('disconnected', 'Connection lost - Reconnecting...');
+                    updateConnectionStatus('disconnected', 'Offline');
                 });
 
                 mqttClient.on('reconnect', () => {
@@ -593,18 +516,18 @@
                 mqttClient.on('close', () => {
                     isConnected = false;
                     addLog('MQTT connection closed');
-                    updateConnectionStatus('disconnected', 'Connection closed');
+                    updateConnectionStatus('disconnected', 'Disconnected');
                 });
 
             } catch (error) {
                 addLog(`Failed to connect: ${error.message}`);
-                updateConnectionStatus('disconnected', `Connection failed: ${error.message}`);
+                updateConnectionStatus('disconnected', 'Connection Failed');
             }
         }
 
         // Initialize the application
         function init() {
-            addLog('Initializing 8-Relay Control System...');
+            addLog('Initializing Relay Control System...');
             generateRelayButtons();
             initMQTT();
         }
@@ -615,7 +538,6 @@
         // Handle page visibility changes
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && isConnected) {
-                // Request status update when page becomes visible
                 setTimeout(() => {
                     sendCommand('status');
                 }, 500);
